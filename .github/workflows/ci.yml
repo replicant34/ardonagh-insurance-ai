@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   test:
@@ -32,3 +36,44 @@ jobs:
           python -m pytest -s \
             tests/test_evaluation_dataset.py \
             tests/test_evaluation_scorer.py
+
+  deploy:
+    needs: test
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name ardonaghinsuranceai
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -t ardonaghinsuranceai.azurecr.io/ardonagh-insurance-ai:${{ github.sha }} \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            ardonaghinsuranceai.azurecr.io/ardonagh-insurance-ai:${{ github.sha }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ardonagh-insurance-ai \
+            --resource-group fabric-demo-rg \
+            --image ardonaghinsuranceai.azurecr.io/ardonagh-insurance-ai:${{ github.sha }}
