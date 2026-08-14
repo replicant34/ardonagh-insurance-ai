@@ -3,3 +3,9 @@ python-dotenv
 pyodbc
 pydantic
 pytest
+langgraph
+chromadb
+tiktoken
+mcp[cli]
+fastapi==0.141.1
+uvicorn[standard]==0.52.3

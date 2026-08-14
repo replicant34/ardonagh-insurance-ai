@@ -4,3 +4,17 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .DS_Store
+logs/
+*.log
+data/chroma/
+# Virtual environments
+.venv-python39-backup/
+venv/
+
+# Local environment / secrets
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
